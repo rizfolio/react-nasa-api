@@ -1,0 +1,186 @@
+import styled, { ThemeProvider } from "styled-components";
+import * as yup from "yup";
+import { Field, Form, Formik } from "formik";
+import { Button, TextField, crukTheme, Select } from "@cruk/cruk-react-components";
+import { checkHttpStatus, parseJSON } from "./utils.js";
+
+import { Component } from "react";
+
+const SiteWrapper = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+`;
+
+//const secretKey = 'Fc7TCNyjrq1zgAXKprUJfgfHliQKobAMQncqZyHB';
+
+const nasaBaseUrl = 'https://images-api.nasa.gov/search?';
+//const nasaBaseUrl = 'https://images-api.nasa.gov/search?media_type=image&q=';
+
+const mediaType = 'image';
+
+
+
+
+//https://api.nasa.gov/planetary/apod?api_key=Fc7TCNyjrq1zgAXKprUJfgfHliQKobAMQncqZyHB
+
+ class App extends Component {
+
+
+  constructor(props) {
+		super(props);
+		this.state = {
+			searchText: "",
+      searchMedia:"",
+			imageList: [],
+			pageNumber: 1
+		 
+		};
+		// Function bindings
+		// this.onSearchInputChange = this.onSearchInputChange.bind(this);
+		// this.handleImageClick = this.handleImageClick.bind(this);
+		// this.onPopUpHide = this.onPopUpHide.bind(this);
+		// this.handleScroll = this.handleScroll.bind(this);
+	}
+
+
+  formSchema = (){
+
+ 
+  yup.object().shape({
+      keywords: yup.string()
+        .min(2,"Too Short!")
+        .max(2,"Too Long!")
+        .required("Please enter keywords to search.")
+    });
+
+
+} 
+ 
+
+  // constructor() {
+  //   super();
+  // }
+
+  componentDidMount() {
+    console.log('componentDidMount');
+  }
+
+  onSubmitClick(value){
+
+    console.log('onSubmitClick',value);
+
+    let url = nasaBaseUrl + "media_type=" + mediaType + "&q=" + value.keywords;
+		fetch(url)
+			.then(checkHttpStatus)
+			.then(parseJSON)
+			.then(resp => {
+        console.log(resp.collection.items)
+				resp.collection.items.forEach(item => this.state.imageList.push(item));
+				this.setState({
+					 
+					imageList: this.state.imageList
+				});
+			})
+			.catch(err => {
+				console.log(err);
+			});
+
+  }
+
+  makeSearch(){
+
+
+  }
+
+  render() {
+
+
+    return (
+    <ThemeProvider theme={crukTheme}>
+      <SiteWrapper>
+        <div>
+          <h1>CRUK technical exercise - React</h1>
+        </div>
+        <div>
+          <Formik
+            validateOnChange
+            initialValues={{
+              keywords: "",
+            }}
+            validationSchema={formSchema}
+            onSubmit={(values, actions) => {
+              this.onSubmitClick(values);
+            }}>
+            {({ errors, touched }) => {
+              return (
+                <Form>
+                  <Field name="keywords">
+                    {({ field }) => (
+                      <>
+                        <TextField
+                          label="Keywords" 
+                          type="text"
+                          required1
+                          {...field}
+                        />
+                        {errors.keywords && touched.keywords && <p>{errors.keywords}</p>}
+                      </>
+                    )}
+                  </Field>
+
+                 
+                    <Select
+                      label="Media type"
+                      name="mediaType"
+                      required
+                    
+                    >
+                      <option value=""></option>
+                      <option value="audio">Audio</option>
+                      <option value="video">Video</option>
+                      <option value="image">Image</option>
+                       
+                    </Select>
+                    
+                    <Field name="yearStart">
+                    {({ field }) => (
+                      <>
+                        <TextField
+                          label="Year start" 
+                          type="text"
+                          required
+                          {...field}
+                        />
+                        {errors.keywords && touched.keywords && <p>{errors.keywords}</p>}
+                      </>
+                    )}
+                  </Field>
+
+                  <Button type="submit">Submit</Button>
+                </Form>
+              )
+            }}
+          </Formik>
+            <div>
+            {this.state.imageList}
+            {
+              this.state.imageList.map(function (item, i) {
+                return  <img alt='' src={item.links[0]['href']} />
+              })
+            }
+            
+
+            </div>
+          
+
+        </div>
+      </SiteWrapper>
+    </ThemeProvider>
+    );
+  }
+}
+
+export default  App;
+
+ 
